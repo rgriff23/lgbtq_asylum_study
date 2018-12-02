@@ -181,7 +181,7 @@ out_columns <- c('Outness_1','Outness_2','Outness_4','Outness_5')
 fa <- n_factors(data[,out_columns])
 fa # 1 factor supported by 8/9 methods
 
-# Univariate models
+# Single-predictor regression models
 glm(rhs ~ out, family='binomial', data=data_reduce) %>% 
   summary() # p = 0.59
 glm(rhs ~ support, family='binomial', data=data_reduce) %>% 
@@ -205,7 +205,7 @@ glm(rhs ~ female, family='binomial', data=data_reduce) %>%
 glm(rhs ~ bisexual, family='binomial', data=data_reduce) %>% 
   summary() 
 
-# Multivariate models
+# Multiple regression model
 glm(rhs ~ ., family='binomial', data=data_reduce) %>%
   summary() # status**, lonely***, trans., english. 
 
