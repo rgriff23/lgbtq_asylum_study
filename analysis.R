@@ -20,6 +20,15 @@ data$origin_country %>% unique %>% length - 5 # 48
 # Number of unique states and provinces
 data$state_province %>% unique %>% length # 29
 
+# Percent answering 'yes' to mental_health question
+sum(data$Mental_health==1, na.rm=TRUE)/nrow(data) # 38.6 %
+
+# Percent answering 'yes' to mental health question based on immigration status
+nrow(data[data$Mental_health==1 & data$Immigration_status=='Granted',])/
+  sum(data$Immigration_status=='Granted') # 39.25 %
+nrow(data[data$Mental_health==1 & data$Immigration_status!='Granted',])/
+  sum(data$Immigration_status!='Granted') # 39.8 %
+
 # Summary stats for RHS
 rhs_columns <- c('RHS_1','RHS_2','RHS_3','RHS_4','RHS_5','RHS_6','RHS_7','RHS_8','RHS_9','RHS_10','RHS_11','RHS_12','RHS_13','RHS_14')
 (rowSums(data[,rhs_columns])-14) %>% mean # 35.44
@@ -181,7 +190,7 @@ out_columns <- c('Outness_1','Outness_2','Outness_4','Outness_5')
 fa <- n_factors(data[,out_columns])
 fa # 1 factor supported by 8/9 methods
 
-# Single-predictor regression models
+# Univariate models
 glm(rhs ~ out, family='binomial', data=data_reduce) %>% 
   summary() # p = 0.59
 glm(rhs ~ support, family='binomial', data=data_reduce) %>% 
@@ -205,7 +214,7 @@ glm(rhs ~ female, family='binomial', data=data_reduce) %>%
 glm(rhs ~ bisexual, family='binomial', data=data_reduce) %>% 
   summary() 
 
-# Multiple regression model
+# Multivariate models
 glm(rhs ~ ., family='binomial', data=data_reduce) %>%
   summary() # status**, lonely***, trans., english. 
 
