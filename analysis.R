@@ -8,7 +8,18 @@ library('psycho')
 library('MuMIn') 
 
 # Import files
-data <- read.csv('~/Dropbox/Asylum Data/Clean data and code/2018-12-01-clean-data.csv')
+data <- read.csv('~/Dropbox/Asylum Data/Clean data and code/2018-12-24-clean-data.csv')
+
+# Compute revised outness scale & overwrite old one
+# Create 'unacceptability' scale for supplementary model
+out_cols <- c('Outness_1','Outness_2','Outness_4','Outness_5')
+data_out <- data # data_out gets overwritten several times in this script
+for (i in out_cols) {
+  data_out[,i] <- ifelse(data[,i]==2, 1, 0) # 1 = out, unaccepted
+  data[,i] <- ifelse(data[,i]==1, 0, 1) # 1 = out
+  }
+data$out <- data[,out_cols] %>% rowMeans(na.rm=TRUE)
+data$unaccepted <- data_out[,out_cols] %>% rowMeans(na.rm=TRUE)
 
 #####################
 # DESCRIPTIVE STATS #
@@ -31,7 +42,7 @@ nrow(data[data$Mental_health==1 & data$Immigration_status!='Granted',])/
 
 # Summary stats for RHS
 rhs_columns <- c('RHS_1','RHS_2','RHS_3','RHS_4','RHS_5','RHS_6','RHS_7','RHS_8','RHS_9','RHS_10','RHS_11','RHS_12','RHS_13','RHS_14')
-(rowSums(data[,rhs_columns])-14) %>% mean # 35.44
+(rowSums(data[,rhs_columns])-14) %>% mean # 21.44
 rowSums(data[,rhs_columns]) %>% sd # 12.11
 rowSums(data[,rhs_columns]) %>% range # 14 - 70
 # percent positive RHS
@@ -41,9 +52,9 @@ sum(data[data$rhs,'Therapist'] == 1, na.rm=TRUE) / sum(data$rhs) # 70.45 %
 sum(data[!data$rhs,'Therapist'] == 1, na.rm=TRUE) / sum(!data$rhs) # 44.26 %
 
 # Summary stats for Loneliness
-data$lonely %>% mean # 11.52 
-data$lonely %>% sd # 4.08
-data$lonely %>% range # 4 - 20
+data$lonely %>% mean # 63.19
+data$lonely %>% sd # 10.86
+data$lonely %>% range # 38.18 - 84.61
 # facebook
 sum(data[data$lonely > mean(data$lonely),'Facebook'] == 1, na.rm=TRUE) / 
   sum(data$lonely > mean(data$lonely)) # 59.33 %
@@ -58,40 +69,39 @@ sum(data[data$lonely > mean(data$lonely),'Buddy'] == 1, na.rm=TRUE) /
   sum(data$lonely > mean(data$lonely)) # 82 %
 
 # Summary stats for emotional support
-data$support %>% mean # 46.68 
-data$support %>% sd # 9.42
-data$support %>% range # 25.7 - 62
+data$support %>% mean(na.rm=TRUE) # 46.68 
+data$support %>% sd(na.rm=TRUE) # 9.42
+data$support %>% range(na.rm=TRUE) # 25.7 - 62
 # facebook
-sum(data[data$support < mean(data$support),'Facebook'] == 1, na.rm=TRUE) / 
-  sum(data$support < mean(data$support)) # 59.76 %
+sum(data[data$support < mean(data$support, na.rm=TRUE),'Facebook'] == 1, na.rm=TRUE) / 
+  sum(data$support < mean(data$support, na.rm=TRUE), na.rm=TRUE) # 60.12 %
 # website
-sum(data[data$support < mean(data$support),'Website'] == 1, na.rm=TRUE) / 
-  sum(data$support < mean(data$support)) # 52.44 %
+sum(data[data$support < mean(data$support, na.rm=TRUE),'Website'] == 1, na.rm=TRUE) / 
+  sum(data$support < mean(data$support, na.rm=TRUE), na.rm=TRUE) # 52.76 %
 # community center
-sum(data[data$support < mean(data$support),'Community_Center'] == 1, na.rm=TRUE) / 
-  sum(data$support < mean(data$support)) # 68.29  %
+sum(data[data$support < mean(data$support, na.rm=TRUE),'Community_Center'] == 1, na.rm=TRUE) / 
+  sum(data$support < mean(data$support, na.rm=TRUE), na.rm=TRUE) # 68.71 %
 # mentor
-sum(data[data$support < mean(data$support),'Buddy'] == 1, na.rm=TRUE) / 
-  sum(data$support < mean(data$support)) # 82.32 %
+sum(data[data$support < mean(data$support, na.rm=TRUE),'Buddy'] == 1, na.rm=TRUE) / 
+  sum(data$support < mean(data$support, na.rm=TRUE), na.rm=TRUE) # 82.82 %
 
 # Summary stats for outness
-data$out %>% mean(na.rm=TRUE) # 2.28 
-data$out %>% sd(na.rm=TRUE) # 0.58
-data$out %>% range(na.rm=TRUE) # 1 - 3
+data$out %>% mean(na.rm=TRUE) # 1.73
+data$out %>% sd(na.rm=TRUE) # 0.3
+data$out %>% range(na.rm=TRUE) # 1 - 2
 # no lgbtq friends
 sum(data[(data$out < mean(data$out, na.rm=TRUE)) %in% TRUE,'Network_1'] == 2, na.rm=TRUE) / 
-  sum((data$out < mean(data$out, na.rm=TRUE)) %in% TRUE) # 13.97 %
+  sum((data$out < mean(data$out, na.rm=TRUE)) %in% TRUE) # 14.29 %
 # friend number = 0
 sum(data[(data$out < mean(data$out, na.rm=TRUE)) %in% TRUE,'LGBTQFriends_number'] == '0', na.rm=TRUE) / 
-  sum((data$out < mean(data$out, na.rm=TRUE)) %in% TRUE) # 7.35 %
+  sum((data$out < mean(data$out, na.rm=TRUE)) %in% TRUE) # 8.03 %
 
 # mean outness score for those who answered all 4 (n=237)
-out_columns <- c('Outness_1','Outness_2','Outness_4','Outness_5')
 out_data <- data[,out_columns] 
 out_data <- out_data[complete.cases(out_data),]
 out_sums <- rowSums(out_data)
-out_sums %>% mean(na.rm=TRUE) # 9.02
-out_sums %>% sd(na.rm=TRUE) # 2.38
+out_sums %>% mean(na.rm=TRUE) # 6.86
+out_sums %>% sd(na.rm=TRUE) # 1.24
 out_sums %>% range(na.rm=TRUE) # 4 - 12
 
 ##########
@@ -156,6 +166,12 @@ table(data$Outness_5)
 # Outness
 data$out[is.na(data$out)] <- mean(data$out, na.rm=TRUE)
 
+# Unacceptibility
+data$unaccepted[is.na(data$unaccepted)] <- mean(data$unaccepted, na.rm=TRUE)
+
+# Support
+data$support[is.na(data$support)] <- mean(data$support, na.rm=TRUE)
+
 # Transgender/other
 data$trans <- ifelse(data$Gender %in% c('Transgender female','Transgender male','Other'), 1, 0)
 
@@ -181,18 +197,18 @@ data$years_lived <- log1p(data$years_lived)
 columns <- c('rhs','out','support','lonely','Age','years_lived','postsecondary','english','status','trans','female','bisexual')
 data_reduce <- data[,columns]
 
+# Save separate data frame for supplementary model (rhs ~ acceptance among out people)
+# trans is removed because there are no trans people after subsetting to only out individuals (i.e., no out trans people!)
+columns_out <- c('rhs','unaccepted','support','lonely','Age','years_lived','postsecondary','english','status','female','bisexual')
+data_out <- data[data$out==1,columns_out]
+
 ##########
 # MODELS #
 ##########
 
-# Factor analysis to check that outness is unitary scale
-out_columns <- c('Outness_1','Outness_2','Outness_4','Outness_5')
-fa <- n_factors(data[,out_columns])
-fa # 1 factor supported by 8/9 methods
-
 # Univariate models
 glm(rhs ~ out, family='binomial', data=data_reduce) %>% 
-  summary() # p = 0.59
+  summary() 
 glm(rhs ~ support, family='binomial', data=data_reduce) %>% 
   summary() # ***
 glm(rhs ~ lonely, family='binomial', data=data_reduce) %>% 
@@ -221,10 +237,22 @@ glm(rhs ~ ., family='binomial', data=data_reduce) %>%
 # AIC model comparison
 mod <- glm(rhs ~ ., family='binomial', data=data_reduce, na.action=na.fail)
 dredge_mod <- dredge(mod)
-dredge_mod[1:10,]
+dredge_mod[dredge_mod$AICc < (min(dredge_mod$AICc) + 2),]
 
 # Model averaging
 model.avg(dredge_mod, subset = delta < 2)
+
+########################
+# SUPPLEMENTARY MODELS #
+########################
+
+# Factor analysis to check that outness is unitary scale
+fa <- n_factors(data[,out_cols])
+fa # 1 factor supported by 8/10 methods
+
+# Among out individuals, does acceptance affect RHS
+glm(rhs ~ ., family='binomial', data=data_out) %>%
+  summary() 
 
 #######
 # END #
