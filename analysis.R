@@ -7,7 +7,8 @@ library('tidyverse')
 library('psycho')
 library('MuMIn') 
 
-# Import files
+# The data file imported here has been manually modified from the data file produced by
+# ****-**-**-create-clean-data.csv
 data <- read.csv('~/Dropbox/Asylum Data/Clean data and code/2018-12-24-clean-data.csv')
 
 # Compute revised outness scale & overwrite old one
@@ -24,6 +25,9 @@ data$unaccepted <- data_out[,out_cols] %>% rowMeans(na.rm=TRUE)
 #####################
 # DESCRIPTIVE STATS #
 #####################
+
+# Number of rows (post-cleaning)
+nrow(data)
 
 # Number of unique countries (excluding invalid countries)
 data$origin_country %>% unique %>% length - 5 # 48
@@ -46,7 +50,7 @@ rhs_columns <- c('RHS_1','RHS_2','RHS_3','RHS_4','RHS_5','RHS_6','RHS_7','RHS_8'
 rowSums(data[,rhs_columns]) %>% sd # 12.11
 rowSums(data[,rhs_columns]) %>% range # 14 - 70
 # percent positive RHS
-data$rhs %>% sum / nrow(data) # 80.2 %
+data$rhs %>% sum / nrow(data) # 80.19 %
 # want therapist / positive RHS
 sum(data[data$rhs,'Therapist'] == 1, na.rm=TRUE) / sum(data$rhs) # 70.45 %
 sum(data[!data$rhs,'Therapist'] == 1, na.rm=TRUE) / sum(!data$rhs) # 44.26 %
@@ -66,12 +70,12 @@ sum(data[data$lonely > mean(data$lonely),'Community_Center'] == 1, na.rm=TRUE) /
   sum(data$lonely > mean(data$lonely)) # 70.0 %
 # mentor
 sum(data[data$lonely > mean(data$lonely),'Buddy'] == 1, na.rm=TRUE) / 
-  sum(data$lonely > mean(data$lonely)) # 82 %
+  sum(data$lonely > mean(data$lonely)) # 82.0 %
 
 # Summary stats for emotional support
-data$support %>% mean(na.rm=TRUE) # 46.68 
+data$support %>% mean(na.rm=TRUE) # 46.71 
 data$support %>% sd(na.rm=TRUE) # 9.42
-data$support %>% range(na.rm=TRUE) # 25.7 - 62
+data$support %>% range(na.rm=TRUE) # 25.7 - 62.0
 # facebook
 sum(data[data$support < mean(data$support, na.rm=TRUE),'Facebook'] == 1, na.rm=TRUE) / 
   sum(data$support < mean(data$support, na.rm=TRUE), na.rm=TRUE) # 60.12 %
@@ -86,9 +90,9 @@ sum(data[data$support < mean(data$support, na.rm=TRUE),'Buddy'] == 1, na.rm=TRUE
   sum(data$support < mean(data$support, na.rm=TRUE), na.rm=TRUE) # 82.82 %
 
 # Summary stats for outness
-data$out %>% mean(na.rm=TRUE) # 1.73
+data$out %>% mean(na.rm=TRUE) # 0.73
 data$out %>% sd(na.rm=TRUE) # 0.3
-data$out %>% range(na.rm=TRUE) # 1 - 2
+data$out %>% range(na.rm=TRUE) # 0 - 1
 # no lgbtq friends
 sum(data[(data$out < mean(data$out, na.rm=TRUE)) %in% TRUE,'Network_1'] == 2, na.rm=TRUE) / 
   sum((data$out < mean(data$out, na.rm=TRUE)) %in% TRUE) # 14.29 %
@@ -100,15 +104,16 @@ sum(data[(data$out < mean(data$out, na.rm=TRUE)) %in% TRUE,'LGBTQFriends_number'
 out_data <- data[,out_columns] 
 out_data <- out_data[complete.cases(out_data),]
 out_sums <- rowSums(out_data)
-out_sums %>% mean(na.rm=TRUE) # 6.86
+out_sums %>% mean(na.rm=TRUE) # 2.86
 out_sums %>% sd(na.rm=TRUE) # 1.24
-out_sums %>% range(na.rm=TRUE) # 4 - 12
+out_sums %>% range(na.rm=TRUE) # 0 - 4
 
 ##########
 # TABLES #
 ##########
 
 # Table 1. Participant characteristics
+# counts
 table(data$language)
 table(data$region)
 table(data$origin_country)
@@ -123,6 +128,21 @@ table(data$English_proficiency)
 table(data$Education)
 table(data$Employment)
 table(data$School)
+# percents
+table(data$language)/sum(table(data$language))*100
+table(data$region)/sum(table(data$region))*100
+table(data$origin_country)/sum(table(data$origin_country))*100
+table(data$residence_country)/sum(table(data$residence_country))*100
+table(data$state_province)/sum(table(data$state_province))*100
+table(data$Gender)/sum(table(data$Gender))*100
+table(data$Sexualorientation)/sum(table(data$Sexualorientation))*100
+table(data$age_group)/sum(table(data$age_group))*100
+table(data$years_lived_grp)/sum(table(data$years_lived_grp))*100
+table(data$Immigration_status)/sum(table(data$Immigration_status))*100
+table(data$English_proficiency)/sum(table(data$English_proficiency))*100
+table(data$Education)/sum(table(data$Education))*100
+table(data$Employment)/sum(table(data$Employment))*100
+table(data$School)/sum(table(data$School))*100
 
 # Table 2. Social support
 # Network questions
@@ -232,12 +252,13 @@ glm(rhs ~ bisexual, family='binomial', data=data_reduce) %>%
 
 # Multivariate models
 glm(rhs ~ ., family='binomial', data=data_reduce) %>%
-  summary() # status**, lonely***, trans., english. 
+  summary() # lonely***, status**, out*, english*, trans.
 
 # AIC model comparison
 mod <- glm(rhs ~ ., family='binomial', data=data_reduce, na.action=na.fail)
 dredge_mod <- dredge(mod)
-dredge_mod[dredge_mod$AICc < (min(dredge_mod$AICc) + 2),]
+dredge_mod[dredge_mod$AICc < (min(dredge_mod$AICc) + 2),] # within 2 AIC
+dredge_mod[1:10,] # top 10
 
 # Model averaging
 model.avg(dredge_mod, subset = delta < 2)
@@ -252,6 +273,10 @@ fa # 1 factor supported by 8/10 methods
 
 # Among out individuals, does acceptance affect RHS
 glm(rhs ~ ., family='binomial', data=data_out) %>%
+  summary() 
+
+# Try model with interaction between outness and sex (in case men and women suffer different psychological consequences to being out)
+glm(rhs ~ out*female+support+lonely+Age+years_lived+postsecondary+english+status+trans+bisexual, family='binomial', data=data_reduce) %>%
   summary() 
 
 #######
