@@ -27,7 +27,7 @@ data$unaccepted <- data_out[,out_cols] %>% rowMeans(na.rm=TRUE)
 #####################
 
 # Number of rows (post-cleaning)
-nrow(data)
+nrow(data) # 308
 
 # Number of unique countries (excluding invalid countries)
 data$origin_country %>% unique %>% length - 5 # 48
@@ -183,6 +183,9 @@ table(data$Outness_5)
 # FEATURE ENGINEERING #
 #######################
 
+# Loneliness
+#data$lonely <- (data$lonely - mean(data$lonely))/sd(data$lonely)
+
 # Outness
 data$out[is.na(data$out)] <- mean(data$out, na.rm=TRUE)
 
@@ -270,6 +273,10 @@ model.avg(dredge_mod, subset = delta < 2)
 # Factor analysis to check that outness is unitary scale
 fa <- n_factors(data[,out_cols])
 fa # 1 factor supported by 8/10 methods
+
+# Differences between Russians and non-Russians
+lm(russian ~ ., data=data[,c('russian','out','support','lonely','Age','years_lived','postsecondary','english','status','trans','female','bisexual')]) %>%
+  summary()
 
 # Among out individuals, does acceptance affect RHS
 glm(rhs ~ ., family='binomial', data=data_out) %>%
