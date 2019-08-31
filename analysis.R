@@ -9,7 +9,7 @@ library('MuMIn')
 
 # The data file imported here has been manually modified from the data file produced by
 # ****-**-**-create-clean-data.csv
-data <- read.csv('~/Downloads/2018-12-24-clean-data.csv')
+data <- read.csv('~/Documents/GitHub/lgbtq_asylum_study/data.csv')
 
 # Compute revised outness in separate dataframe: data_out
 out_cols <- c('Outness_1','Outness_2','Outness_4','Outness_5')
