@@ -9,17 +9,22 @@ library('MuMIn')
 
 # The data file imported here has been manually modified from the data file produced by
 # ****-**-**-create-clean-data.csv
-data <- read.csv('~/Dropbox/Asylum Data/Clean data and code/2018-12-24-clean-data.csv')
+data <- read.csv('~/Downloads/2018-12-24-clean-data.csv')
 
-# Compute revised outness scale & overwrite old one
-# Create 'unacceptability' scale for supplementary model
+# Compute revised outness in separate dataframe: data_out
 out_cols <- c('Outness_1','Outness_2','Outness_4','Outness_5')
-data_out <- data # data_out gets overwritten several times in this script
+data_out <- data
 for (i in out_cols) {
   data_out[,i] <- ifelse(data[,i]==2, 1, 0) # 1 = out, unaccepted
   data[,i] <- ifelse(data[,i]==1, 0, 1) # 1 = out
   }
 data$out <- data[,out_cols] %>% rowMeans(na.rm=TRUE)
+
+# Factor analysis to check that outness is unitary scale
+fa <- n_factors(data[,out_cols])
+fa # 1 factor supported by 8/10 methods
+
+# Create 'unacceptability' scale for supplementary model
 data$unaccepted <- data_out[,out_cols] %>% rowMeans(na.rm=TRUE)
 
 #####################
@@ -183,37 +188,15 @@ table(data$Outness_5)
 # FEATURE ENGINEERING #
 #######################
 
-# Loneliness
-#data$lonely <- (data$lonely - mean(data$lonely))/sd(data$lonely)
-
-# Outness
 data$out[is.na(data$out)] <- mean(data$out, na.rm=TRUE)
-
-# Unacceptibility
 data$unaccepted[is.na(data$unaccepted)] <- mean(data$unaccepted, na.rm=TRUE)
-
-# Support
 data$support[is.na(data$support)] <- mean(data$support, na.rm=TRUE)
-
-# Transgender/other
 data$trans <- ifelse(data$Gender %in% c('Transgender female','Transgender male','Other'), 1, 0)
-
-# Cis-female
 data$female <- ifelse(data$Gender == 'Cis-female', 1, 0)
-
-# Bisexual
 data$bisexual <- ifelse(data$Sexualorientation == 'Bisexual', 1, 0)
-
-# Education
 data$postsecondary <- ifelse(data$Education == 'Post-secondary', 1, 0)
-
-# Language
 data$english <- ifelse(data$English_proficiency %in% c('Excellent','Very good','Good'), 1, 0)
-
-# Immigration status
 data$status <- ifelse(data$Immigration_status == 'Granted', 1, 0)
-
-# Years lived
 data$years_lived <- log1p(data$years_lived)
 
 # Reduce data
@@ -223,7 +206,7 @@ data_reduce <- data[,columns]
 # Save separate data frame for supplementary model (rhs ~ acceptance among out people)
 # trans is removed because there are no trans people after subsetting to only out individuals (i.e., no out trans people!)
 columns_out <- c('rhs','unaccepted','support','lonely','Age','years_lived','postsecondary','english','status','female','bisexual')
-data_out <- data[data$out==1,columns_out]
+data_out <- data[data$out==1, columns_out]
 
 ##########
 # MODELS #
@@ -257,34 +240,34 @@ glm(rhs ~ bisexual, family='binomial', data=data_reduce) %>%
 glm(rhs ~ ., family='binomial', data=data_reduce) %>%
   summary() # lonely***, status**, out*, english*, trans.
 
-# AIC model comparison
+##########################
+# SUPPLEMENTARY ANALYSIS #
+##########################
+
+# AIC model comparison and model averaging
+# Leads to similar conclusions as multiple logistic regression model
 mod <- glm(rhs ~ ., family='binomial', data=data_reduce, na.action=na.fail)
 dredge_mod <- dredge(mod)
 dredge_mod[dredge_mod$AICc < (min(dredge_mod$AICc) + 2),] # within 2 AIC
 dredge_mod[1:10,] # top 10
-
-# Model averaging
 model.avg(dredge_mod, subset = delta < 2)
 
-########################
-# SUPPLEMENTARY MODELS #
-########################
-
-# Factor analysis to check that outness is unitary scale
-fa <- n_factors(data[,out_cols])
-fa # 1 factor supported by 8/10 methods
-
-# Differences between Russians and non-Russians
-lm(russian ~ ., data=data[,c('russian','out','support','lonely','Age','years_lived','postsecondary','english','status','trans','female','bisexual')]) %>%
-  summary()
-
-# Among out individuals, does acceptance affect RHS
+# Among out individuals, see if acceptance affects RHS
 glm(rhs ~ ., family='binomial', data=data_out) %>%
   summary() 
 
 # Try model with interaction between outness and sex (in case men and women suffer different psychological consequences to being out)
 glm(rhs ~ out*female+support+lonely+Age+years_lived+postsecondary+english+status+trans+bisexual, family='binomial', data=data_reduce) %>%
   summary() 
+
+# Check if Russians influence the results
+is_russian_data <- data %>% 
+  mutate(is_russian = ifelse(origin_country=='Russia', 1, 0)) %>% 
+  select(-origin_country) %>% select(columns, is_russian)
+glm(rhs ~ ., data=is_russian_data, family='binomial') %>% summary
+
+# Check what is associated with asylum status (including being Russian)
+glm(status ~ ., data=is_russian_data, family='binomial') %>% summary
 
 #######
 # END #
