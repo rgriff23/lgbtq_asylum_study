@@ -212,33 +212,35 @@ data_out <- data[data$out==1, columns_out]
 # MODELS #
 ##########
 
+# standard errors for odds ratios are computed using the delta method:
+# https://www.stata.com/support/faqs/statistics/delta-rule/
+# https://www.stata.com/support/faqs/statistics/delta-method/
+compute_odds_ratios <- function(model) {
+  coefs <- exp(summary(model)$coefficients[, 1])
+  se <- coefs*summary(model)$coefficients[, 2]
+  lower <- coefs - se
+  upper <- coefs + se
+  df <- data.frame(coefs, lower, upper) %>% round(2)
+  df$p <- summary(model)$coefficients[, 4] %>% round(4)
+  return(df)
+}
+compute_odds_ratios(model)
+
 # Univariate models
-glm(rhs ~ out, family='binomial', data=data_reduce) %>% 
-  summary() 
-glm(rhs ~ support, family='binomial', data=data_reduce) %>% 
-  summary() # ***
-glm(rhs ~ lonely, family='binomial', data=data_reduce) %>% 
-  summary() # ***
-glm(rhs ~ Age, family='binomial', data=data_reduce) %>% 
-  summary()
-glm(rhs ~ years_lived, family='binomial', data=data_reduce) %>% 
-  summary()
-glm(rhs ~ postsecondary, family='binomial', data=data_reduce) %>% 
-  summary()
-glm(rhs ~ english, family='binomial', data=data_reduce) %>% 
-  summary()
-glm(rhs ~ status, family='binomial', data=data_reduce) %>% 
-  summary() # *
-glm(rhs ~ trans, family='binomial', data=data_reduce) %>% 
-  summary() 
-glm(rhs ~ female, family='binomial', data=data_reduce) %>% 
-  summary() 
-glm(rhs ~ bisexual, family='binomial', data=data_reduce) %>% 
-  summary() 
+glm(rhs ~ out, family='binomial', data=data_reduce) %>% compute_odds_ratios
+glm(rhs ~ support, family='binomial', data=data_reduce) %>% compute_odds_ratios
+glm(rhs ~ lonely, family='binomial', data=data_reduce) %>% compute_odds_ratios
+glm(rhs ~ Age, family='binomial', data=data_reduce) %>% compute_odds_ratios
+glm(rhs ~ years_lived, family='binomial', data=data_reduce) %>% compute_odds_ratios
+glm(rhs ~ postsecondary, family='binomial', data=data_reduce) %>% compute_odds_ratios
+glm(rhs ~ english, family='binomial', data=data_reduce) %>% compute_odds_ratios
+glm(rhs ~ status, family='binomial', data=data_reduce) %>% compute_odds_ratios
+glm(rhs ~ trans, family='binomial', data=data_reduce) %>% compute_odds_ratios
+glm(rhs ~ female, family='binomial', data=data_reduce) %>% compute_odds_ratios
+glm(rhs ~ bisexual, family='binomial', data=data_reduce) %>% compute_odds_ratios
 
 # Multivariate models
-glm(rhs ~ ., family='binomial', data=data_reduce) %>%
-  summary() # lonely***, status**, out*, english*, trans.
+glm(rhs ~ ., family='binomial', data=data_reduce) %>% compute_odds_ratios
 
 ##########################
 # SUPPLEMENTARY ANALYSIS #
