@@ -5,6 +5,7 @@
 # Load packages
 library('tidyverse')
 library('psycho')
+library('psych')
 library('MuMIn') 
 
 # The data file imported here has been manually modified from the data file produced by
@@ -26,6 +27,9 @@ fa # 1 factor supported by 8/10 methods
 
 # Create 'unacceptability' scale for supplementary model
 data$unaccepted <- data_out[,out_cols] %>% rowMeans(na.rm=TRUE)
+
+# Check Chronback's alpha for RHS score
+data[,grep('RHS_[0-9]', names(data))] %>% alpha # 0.91 (0.9, 0.93)
 
 #####################
 # DESCRIPTIVE STATS #
