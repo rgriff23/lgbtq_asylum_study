@@ -28,8 +28,11 @@ fa # 1 factor supported by 8/10 methods
 # Create 'unacceptability' scale for supplementary model
 data$unaccepted <- data_out[,out_cols] %>% rowMeans(na.rm=TRUE)
 
-# Check Chronback's alpha for RHS score
+# Check Chronback's alpha for scales
 data[,grep('RHS_[0-9]', names(data))] %>% alpha # 0.91 (0.9, 0.93)
+data[,out_cols] %>% alpha # 0.62 (0.55, 0.69)
+data[, grep('Loneliness_[1-4]', names(data))] %>% alpha # 0.89 0.91 0.92 
+data[, grep('EMSupport_[1-4]', names(data))] %>% alpha # 0.93 (0.91, 0.94)
 
 #####################
 # DESCRIPTIVE STATS #
